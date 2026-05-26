@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>旅行助手 · 智能旅游Agent</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #0b8793 0%, #2c3e50 100%);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 280px;
+            background: rgba(30, 45, 55, 0.95);
+            backdrop-filter: blur(10px);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .new-chat-btn {
+            background: #2c7da0;
+            border: none;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 40px;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .new-chat-btn:hover { background: #1f6685; }
+        .sessions-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+        .session-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            background: rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .session-item:hover { background: rgba(255,255,255,0.2); }
+        .session-item.active { background: #2c7da0; }
+        .session-title {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 0.9rem;
+        }
+        .delete-session {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.6);
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0 6px;
+            opacity: 0;
+        }
+        .session-item:hover .delete-session { opacity: 1; }
+        .delete-session:hover { color: #ff6b6b; }
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.96);
+            overflow: hidden;
+        }
+        .chat-header {
+            background: linear-gradient(135deg, #0f5c6b, #1a2f3f);
+            color: white;
+            padding: 18px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .title h1 { font-size: 1.6rem; display: flex; align-items: center; gap: 8px; }
+        .title p { font-size: 0.8rem; opacity: 0.85; margin-top: 4px; }
+        .config-bar {
+            display: flex;
+            gap: 16px;
+            background: rgba(255,255,255,0.15);
+            padding: 6px 18px;
+            border-radius: 40px;
+            align-items: center;
+        }
+        .config-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+        .config-item input {
+            width: 65px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            border: none;
+            background: rgba(255,255,255,0.9);
+            text-align: center;
+        }
+        .rag-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f0b27a;
+            padding: 4px 12px;
+            border-radius: 30px;
+            color: #2c3e2f;
+            font-weight: bold;
+        }
+        .rag-toggle input { width: auto; margin-left: 5px; transform: scale(1.1); cursor: pointer; }
+        .btn-clear {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+        .btn-guide {
+            background: #f39c12;
+            border: none;
+            color: #2c3e2f;
+            padding: 6px 16px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        .btn-guide:hover {
+            background: #e67e22;
+            transform: scale(1.02);
+            color: white;
+        }
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: #f4f9fc;
+        }
+        .message { display: flex; gap: 12px; animation: fadeIn 0.3s ease; }
+        .message.user { justify-content: flex-end; }
+        .message.assistant { justify-content: flex-start; }
+        .avatar {
+            width: 38px; height: 38px; border-radius: 50%;
+            background: #d4e6f1;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; flex-shrink: 0;
+        }
+        .user .avatar { background: #2c7da0; color: white; order: 2; }
+        .assistant .avatar { background: #f39c12; color: white; }
+        .bubble {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 24px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            font-size: 0.95rem;
+            position: relative;
+        }
+        .user .bubble {
+            background: #2c7da0;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .assistant .bubble {
+            background: white;
+            color: #1e2a36;
+            border: 1px solid #cbd5e1;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .timestamp { font-size: 0.7rem; margin-top: 6px; opacity: 0.6; text-align: right; }
+        .retrieved-note {
+            font-size: 0.7rem;
+            background: #eef2f5;
+            padding: 4px 8px;
+            border-radius: 12px;
+            margin-top: 6px;
+            color: #2c5f8a;
+            display: inline-block;
+        }
+        .amap-badge {
+            font-size: 0.7rem;
+            background: #e8f0fe;
+            color: #0b5e7c;
+            border-radius: 20px;
+            padding: 2px 10px;
+            margin-left: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .input-area {
+            background: white;
+            padding: 18px 24px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        .input-wrapper {
+            flex: 1;
+            display: flex;
+            gap: 12px;
+            background: #f1f5f9;
+            border-radius: 40px;
+            padding: 8px 18px;
+            align-items: center;
+        }
+        textarea {
+            flex: 1;
+            border: none;
+            background: transparent;
+            resize: none;
+            padding: 8px 0;
+            font-family: inherit;
+            font-size: 0.95rem;
+            max-height: 120px;
+            outline: none;
+        }
+        button {
+            background: #2c7da0;
+            border: none;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:hover:not(:disabled) { background: #1f6685; transform: scale(1.02); }
+        button:disabled { background: #96b7c7; cursor: not-allowed; }
+        .loading {
+            display: inline-block;
+            width: 18px; height: 18px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 768px) {
+            .sidebar { width: 240px; }
+            .bubble { max-width: 85%; }
+        }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="sidebar-header">
+        <button class="new-chat-btn" id="newChatBtn">➕ 新建对话</button>
+    </div>
+    <div class="sessions-list" id="sessionsList"></div>
+</div>
+<div class="chat-container">
+    <div class="chat-header">
+        <div class="title">
+            <h1>🧳 旅行助手 · 智能Agent</h1>
+            <p>基于 Qwen2.5-3B + 高德地图实时数据</p>
+        </div>
+        <div class="config-bar">
+            <div class="config-item">🌡️ <input type="number" id="temperature" step="0.1" value="0.7" min="0.1" max="1.5"></div>
+            <div class="config-item">📏 <input type="number" id="maxTokens" value="2048" step="256" min="128" max="4096"></div>
+            <div class="rag-toggle">
+                📚 RAG检索 <input type="checkbox" id="ragCheckbox" checked>
+            </div>
+            <button class="btn-clear" id="clearBtn">🗑️ 清空</button>
+            <!-- 景点导览按钮：连接到welcome.html -->
+            <button class="btn-guide" id="gotoWelcomeBtn">🏔️ 景点导览</button>
+        </div>
+    </div>
+    <div class="messages-area" id="messagesArea">
+        <div class="message assistant">
+            <div class="avatar">🧳</div>
+            <div class="bubble">
+                嗨！我是你的旅行智能助手 🌏<br>
+                我可以帮你查询天气、推荐酒店、规划路线、推荐景点。<br>
+                有什么旅行问题尽管问我吧！
+                <div class="timestamp">刚刚</div>
+            </div>
+        </div>
+    </div>
+    <div class="input-area">
+        <div class="input-wrapper">
+            <textarea id="messageInput" placeholder="例如：我明天准备去都江堰，天气怎么样，有哪些酒店，怎么去，有什么景点" rows="1"></textarea>
+        </div>
+        <button id="sendBtn">发送 ✈️</button>
+    </div>
+</div>
+<script>
+    let messages = [];
+    let isLoading = false;
+    let currentSessionId = null;
+    let sessions = [];
+
+    const messagesArea = document.getElementById('messagesArea');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const newChatBtn = document.getElementById('newChatBtn');
+    const sessionsListDiv = document.getElementById('sessionsList');
+    const tempInput = document.getElementById('temperature');
+    const maxTokenInput = document.getElementById('maxTokens');
+    const ragCheckbox = document.getElementById('ragCheckbox');
+    const gotoWelcomeBtn = document.getElementById('gotoWelcomeBtn');
+
+    // 景点导览：正确连接到同目录下的welcome.html，实现双页面互联
+    if (gotoWelcomeBtn) {
+        gotoWelcomeBtn.addEventListener('click', () => {
+            window.location.href = 'welcome';
+        });
+    }
+
+    function generateId() {
+        return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    async function loadSessions() {
+        const res = await fetch('/sessions');
+        sessions = await res.json();
+        renderSessions();
+    }
+
+    function renderSessions() {
+        sessionsListDiv.innerHTML = '';
+        sessions.forEach(sess => {
+            const div = document.createElement('div');
+            div.className = 'session-item' + (currentSessionId === sess.id ? ' active' : '');
+            div.innerHTML = `<div class="session-title">${escapeHtml(sess.title)}</div><button class="delete-session" data-id="${sess.id}">🗑️</button>`;
+            div.querySelector('.session-title').addEventListener('click', () => switchSession(sess.id));
+            div.querySelector('.delete-session').addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteSession(sess.id);
+            });
+            sessionsListDiv.appendChild(div);
+        });
+    }
+
+    async function switchSession(sessionId) {
+        if (currentSessionId === sessionId) return;
+        currentSessionId = sessionId;
+        const res = await fetch(`/sessions/${sessionId}/messages`);
+        const msgs = await res.json();
+        messages = [];
+        msgs.forEach(msg => messages.push({ role: msg.role, content: msg.content }));
+        renderMessages();
+        renderSessions();
+    }
+
+    async function deleteSession(sessionId) {
+        if (!confirm('删除后无法恢复，确定删除吗？')) return;
+        await fetch(`/sessions/${sessionId}`, { method: 'DELETE' });
+        if (currentSessionId === sessionId) await createNewSession();
+        else await loadSessions();
+    }
+
+    async function createNewSession() {
+        const newId = generateId();
+        await fetch(`/sessions/${newId}?title=新对话`, { method: 'POST' });
+        await switchSession(newId);
+        await loadSessions();
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function renderMessages() {
+        const displayMessages = messages.filter(m => m.role !== 'system');
+        messagesArea.innerHTML = '';
+        displayMessages.forEach(msg => {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${msg.role}`;
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.textContent = msg.role === 'user' ? '👤' : '🧳';
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            let contentHtml = `<div>${escapeHtml(msg.content)}</div><div class="timestamp">${new Date().toLocaleTimeString()}</div>`;
+            if (msg.retrieved && msg.retrieved.length > 0) {
+                contentHtml += `<div class="retrieved-note">📖 参考了 ${msg.retrieved.length} 条旅游知识</div>`;
+            }
+            if (msg.amapCalled) {
+                contentHtml += `<div class="amap-badge">📍 高德实时数据</div>`;
+            }
+            bubble.innerHTML = contentHtml;
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(bubble);
+            messagesArea.appendChild(messageDiv);
+        });
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+    }
+
+    function addUserMessage(content) { messages.push({ role: "user", content }); renderMessages(); }
+    function addAssistantMessage(content, retrieved = null, amapCalled = false) {
+        const msg = { role: "assistant", content };
+        if (retrieved) msg.retrieved = retrieved;
+        if (amapCalled) msg.amapCalled = true;
+        messages.push(msg);
+        renderMessages();
+    }
+    function setLoading(loading) { isLoading = loading; sendBtn.disabled = loading; messageInput.disabled = loading; sendBtn.innerHTML = loading ? '<span class="loading"></span> 思考中...' : '发送 ✈️'; }
+
+    async function sendMessage() {
+        if (isLoading) return;
+        const userText = messageInput.value.trim();
+        if (!userText) return;
+        messageInput.value = '';
+        messageInput.style.height = 'auto';
+        if (!currentSessionId) await createNewSession();
+        addUserMessage(userText);
+        const requestBody = {
+            session_id: currentSessionId,
+            messages: messages,
+            temperature: parseFloat(tempInput.value),
+            max_tokens: parseInt(maxTokenInput.value),
+            retrieval_mode: ragCheckbox.checked ? "hybrid" : "none",
+            top_k: 5
+        };
+        setLoading(true);
+        try {
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
+            if (!response.ok) throw new Error((await response.json()).detail);
+            const data = await response.json();
+            addAssistantMessage(data.answer, data.retrieved_chunks, data.amap_called);
+            await loadSessions();
+        } catch (error) {
+            addAssistantMessage(`❌ 出错了: ${error.message}`);
+        } finally {
+            setLoading(false);
+            messageInput.focus();
+        }
+    }
+
+    async function clearChat() {
+        if (currentSessionId) await deleteSession(currentSessionId);
+        else await createNewSession();
+    }
+
+    function autoResize() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    newChatBtn.addEventListener('click', createNewSession);
+    clearBtn.addEventListener('click', clearChat);
+    messageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    messageInput.addEventListener('input', autoResize);
+    window.addEventListener('load', async () => {
+        await loadSessions();
+        if (sessions.length === 0) await createNewSession();
+        else await switchSession(sessions[0].id);
+        messageInput.focus();
+    });
+</script>
+</body>
+</html>

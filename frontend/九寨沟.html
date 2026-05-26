@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>九寨沟 · 山水文化之旅</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(to bottom, #e6f7ff, #f0f9ff);
+            color: #222;
+            line-height: 1.8;
+            overflow-x: hidden;
+        }
+
+        /* 全局动画 */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* 新增：返回按钮样式 */
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 999;
+            background: #0284c7;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #0369a1;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        }
+
+        /* 顶部Hero区：稳定加载的山水背景图 */
+        .hero {
+            position: relative;
+            height: 70vh;
+            background: url("./static/img/九寨沟.webp") center/cover no-repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.6));
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            animation: fadeInUp 1.2s ease;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .hero p {
+            font-size: 1.4rem;
+            opacity: 0.95;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        /* 全局淡影背景：优先webp，无则01.jpg兜底 */
+        .bg-decoration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            opacity: 0.08;
+            pointer-events: none;
+            animation: float 9s ease-in-out infinite;
+            background: url("九寨沟.webp") center/cover no-repeat;
+        }
+
+        /* 主容器：限制宽度，居中 */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 60px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 交错内容布局 */
+        .section {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            margin-bottom: 80px;
+            animation: fadeInUp 1s ease;
+        }
+
+        .section:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
+        .section-text {
+            flex: 1;
+            background: white;
+            padding: 36px;
+            border-radius: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .section-text:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+        }
+
+        .section-text h2 {
+            color: #0284c7;
+            margin-bottom: 16px;
+            font-size: 26px;
+            border-left: 6px solid #38bdf8;
+            padding-left: 14px;
+        }
+
+        .section-text p {
+            font-size: 17px;
+            color: #333;
+            margin-bottom: 14px;
+        }
+
+        .section-img {
+            flex: 1;
+            height: 300px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .section-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .section-img:hover img {
+            transform: scale(1.05);
+        }
+
+        /* 特色标签区 */
+        .tags-section {
+            background: white;
+            padding: 36px;
+            border-radius: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .tags-section h2 {
+            color: #0284c7;
+            margin-bottom: 24px;
+            font-size: 26px;
+        }
+
+        .tag {
+            display: inline-block;
+            background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+            color: #0369a1;
+            padding: 10px 20px;
+            border-radius: 50px;
+            margin: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .tag:hover {
+            background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        /* 底部 */
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #777;
+            font-size: 15px;
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 768px) {
+            .section, .section:nth-child(even) {
+                flex-direction: column;
+            }
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            .decoration-left, .decoration-right {
+                display: none;
+            }
+            /* 响应式适配返回按钮 */
+            .back-btn {
+                padding: 10px 20px;
+                font-size: 14px;
+                top: 15px;
+                left: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 新增：返回welcome.html按钮 -->
+    <button class="back-btn" onclick="window.location.href='welcome'">← 返回首页</button>
+    <div class="decoration-left"></div>
+    <div class="decoration-right"></div>
+
+    <div class="hero">
+        <div class="hero-content">
+            <h1>九寨沟</h1>
+            <p>世界自然遗产｜人间仙境｜童话世界</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="section">
+            <div class="section-text">
+                <h2>🏔️ 景区简介</h2>
+                <p>九寨沟位于四川省阿坝藏族羌族自治州九寨沟县，因沟内有九个藏族村寨而得名。景区面积65074平方公里，海拔2000-4760米，拥有"世界自然遗产"和"世界生物圈保护区"两项桂冠。</p>
+                <p>九寨沟以翠湖、叠瀑、彩林、雪峰、藏情、蓝冰"六绝"著称于世，被誉为"人间仙境"、"童话世界"，是中国最著名的自然风景区之一。</p>
+            </div>
+            <div class="section-img">
+                <img src="./static/img/九寨沟01.webp" alt="九寨沟">
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-text">
+                <h2>💧 五花海</h2>
+                <p>五花海位于九寨沟中心区域，海拔2472米，是九寨沟最精美、最著名的景点。湖水清澈见底，因湖底钙华沉积和藻类分布不同，呈现出翠绿、墨绿、湛蓝、鹅黄等丰富色彩。</p>
+                <p>阳光照射下，五花海色彩斑斓，如同一块巨大的翡翠镶嵌在山谷中，被誉为"九寨沟的灵魂"，是摄影爱好者的天堂。</p>
+            </div>
+            <div class="section-img">
+                <img src="./static/img/九寨沟02.webp" alt="五花海">
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-text">
+                <h2>🌈 彩林与瀑布</h2>
+                <p>九寨沟拥有中国最完整、面积最大的原始森林之一，面积近300平方公里。林中生长着红豆杉、银杏等珍稀植物，以及大熊猫、金丝猴等珍稀动物。</p>
+                <p>诺日朗瀑布是中国最宽的瀑布之一，宽270米，高24.5米，水量充沛，声势浩大。珍珠滩瀑布则如万斛珍珠倾泻而下，气势磅礴，令人震撼。</p>
+            </div>
+            <div class="section-img">
+                <img src="./static/img/九寨沟03.webp" alt="九寨沟瀑布">
+            </div>
+        </div>
+
+        <div class="tags-section">
+            <h2>📌 九寨沟必体验</h2>
+            <span class="tag">世界自然遗产</span>
+            <span class="tag">五花海</span>
+            <span class="tag">诺日朗瀑布</span>
+            <span class="tag">五彩池</span>
+            <span class="tag">珍珠滩</span>
+            <span class="tag">原始森林</span>
+            <span class="tag">藏羌风情</span>
+            <span class="tag">蓝冰奇观</span>
+        </div>
+    </div>
+
+    <div class="footer">
+        旅行助手 · 景点介绍页 | 九寨沟
+    </div>
+</body>
+</html>
